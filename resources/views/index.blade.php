@@ -52,7 +52,7 @@
                 >
                     <div>
                         <div class="h-48 w-full rounded-xl overflow-hidden bg-gray-50 mb-4 flex items-center justify-center">
-                            <img :src="item.image" :alt="item.name" class="h-full w-full object-cover">
+                            <img :src="item.image" :alt="item.name" class="h-full w-full object-contain p-2">
                         </div>
                         <span class="text-[10px] font-extrabold uppercase bg-cyan-50 text-cyan-700 px-2.5 py-1 rounded-md tracking-wider" x-text="item.category"></span>
                         <h3 class="font-bold text-gray-900 text-base mt-2" x-text="item.name"></h3>
@@ -79,7 +79,7 @@
                 <template x-if="activeModal">
                     <div>
                         <div class="h-48 w-full rounded-xl overflow-hidden bg-gray-100 mb-4">
-                            <img :src="activeModal.image" :alt="activeModal.name" class="w-full h-full object-cover">
+                            <img :src="activeModal.image" :alt="activeModal.name" class="w-full h-full object-contain p-2">
                         </div>
                         <span class="text-[10px] font-extrabold uppercase bg-cyan-50 text-cyan-700 px-2.5 py-1 rounded-md tracking-wider" x-text="activeModal.category"></span>
                         <h3 class="text-2xl font-bold mt-1 mb-2 text-gray-900" x-text="activeModal.name"></h3>
