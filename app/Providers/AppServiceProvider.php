@@ -2,6 +2,9 @@
 
 namespace App\Providers;
 
+use Illuminate\Auth\Events\Login;
+use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Event;
 use Illuminate\Support\ServiceProvider;
 
 class AppServiceProvider extends ServiceProvider
@@ -12,6 +15,7 @@ class AppServiceProvider extends ServiceProvider
     public function register(): void
     {
         //
+       
     }
 
     /**
@@ -20,5 +24,13 @@ class AppServiceProvider extends ServiceProvider
     public function boot(): void
     {
         //
+         Event::listen(Login::class, function (Login $event) {
+            DB::table('login_histories')->insert([
+                'user_id' => $event->user->id,
+                'ip_address' => request()->ip(),
+                'user_agent' => request()->userAgent(),
+                'logged_in_at' => now(),
+            ]);
+        });
     }
 }

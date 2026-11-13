@@ -3,6 +3,8 @@
 @section('content')
     <div 
         x-data="{ 
+            isAdmin: @js(auth()->user()?->isAdmin() ?? false),
+            adminSecret: @js(auth()->user()?->isAdmin() ? config('services.convex.admin_secret') : ''),
             storeData: {},
             activeCategory: 'all',
             activeModal: null,
@@ -27,7 +29,7 @@
                 { id: 'confectionery', label: 'Confectionery' },
                 { id: 'personal-hygiene', label: 'Personal Hygiene' },
                 { id: 'baby-products', label: 'Baby Products' },
-                 { id: 'snacks', label: 'Snacks' },
+                { id: 'snacks', label: 'Snacks' },
                 { id: 'kitchen-dining', label: 'Kitchen & Dining' }
             ],
 
@@ -54,6 +56,7 @@
             },
 
             openAddModal() {
+                if (!this.isAdmin) return;
                 this.editingProductId = null;
                 this.newProduct = { name: '', price: '', category: 'electronics', description: '', stockQuantity: 10 };
                 this.selectedFile = null;
@@ -62,6 +65,7 @@
             },
 
             openEditModal(product) {
+                if (!this.isAdmin) return;
                 this.editingProductId = product._id;
                 this.newProduct = {
                     name: product.name,
@@ -77,9 +81,13 @@
             },
 
             async deleteProduct(product) {
+                if (!this.isAdmin) return;
                 if (!confirm('Delete ' + product.name + '? This will remove it everywhere immediately.')) return;
                 try {
-                    await window.convex.mutation('products:deleteProduct', { id: product._id });
+                    await window.convex.mutation('products:deleteProduct', {
+                        adminSecret: this.adminSecret,
+                        id: product._id
+                    });
                     if (this.activeModal && this.activeModal._id === product._id) {
                         this.activeModal = null;
                     }
@@ -90,6 +98,7 @@
             },
 
             async submitProduct() {
+                if (!this.isAdmin) return;
                 const parsedPrice = parseFloat(this.newProduct.price);
                 if (!this.newProduct.name || isNaN(parsedPrice) || parsedPrice < 0) {
                     alert('Price cannot be less than 0.');
@@ -102,7 +111,9 @@
 
                     // Upload local PNG/JPG file to Convex Storage if selected
                     if (this.selectedFile) {
-                        const postUrl = await window.convex.mutation('products:generateUploadUrl', {});
+                        const postUrl = await window.convex.mutation('products:generateUploadUrl', {
+                            adminSecret: this.adminSecret
+                        });
                         const result = await fetch(postUrl, {
                             method: 'POST',
                             headers: { 'Content-Type': this.selectedFile.type },
@@ -115,6 +126,7 @@
                     if (this.editingProductId) {
                         // Patch existing product in-place (no duplicates)
                         await window.convex.mutation('products:updateProduct', {
+                            adminSecret: this.adminSecret,
                             id: this.editingProductId,
                             name: this.newProduct.name,
                             price: parsedPrice,
@@ -125,6 +137,7 @@
                     } else {
                         // Insert brand new product
                         await window.convex.mutation('products:addProduct', {
+                            adminSecret: this.adminSecret,
                             name: this.newProduct.name,
                             price: parsedPrice,
                             category: this.newProduct.category,
@@ -149,7 +162,7 @@
             }
         }"
     >
-        <!-- Sticky Category Navigation Bar + Add Button -->
+        <!-- Sticky Category Navigation Bar + Admin-Only Add Button -->
         <div class="sticky top-[60px] z-40 bg-white border-b border-gray-200 shadow-sm py-3 px-6 flex justify-between items-center">
             <div class="max-w-7xl mx-auto flex items-center min-w-0 flex-1">
                 <button
@@ -193,6 +206,8 @@
             </div>
 
             <button 
+                x-show="isAdmin"
+                style="display: none;"
                 @click="openAddModal()"
                 class="bg-gray-900 hover:bg-black text-white px-4 py-2 rounded-full text-xs font-bold uppercase tracking-wider whitespace-nowrap transition flex items-center space-x-1"
             >
@@ -223,8 +238,8 @@
                                 @click="activeModal = product"
                                 class="group relative snap-center shrink-0 w-64 bg-white border border-gray-100 rounded-2xl p-4 shadow-sm transition-all duration-300 ease-out hover:-translate-y-2 hover:scale-[1.03] hover:shadow-2xl hover:z-20 cursor-pointer flex flex-col justify-between"
                             >
-                                <!-- Quick Edit / Delete Hover Controls -->
-                                <div class="absolute top-3 right-3 z-10 flex space-x-1.5 opacity-0 group-hover:opacity-100 transition-opacity duration-200">
+                                <!-- Admin-Only Quick Edit / Delete Hover Controls -->
+                                <div x-show="isAdmin" style="display: none;" class="absolute top-3 right-3 z-10 flex space-x-1.5 opacity-0 group-hover:opacity-100 transition-opacity duration-200">
                                     <button 
                                         type="button"
                                         @click.stop="openEditModal(product)"
@@ -286,8 +301,8 @@
                             </button>
                         </div>
 
-                        <!-- Admin Edit / Delete Bar inside Quick View -->
-                        <div class="mt-4 pt-3 border-t border-gray-100 flex justify-end space-x-2">
+                        <!-- Admin-Only Edit / Delete Bar inside Quick View -->
+                        <div x-show="isAdmin" style="display: none;" class="mt-4 pt-3 border-t border-gray-100 flex justify-end space-x-2">
                             <button 
                                 type="button"
                                 @click="openEditModal(activeModal)"
@@ -308,9 +323,9 @@
             </div>
         </div>
 
-        <!-- Dynamic Add / Edit Product Modal Form -->
+        <!-- Admin-Only Dynamic Add / Edit Product Modal Form -->
         <div 
-            x-show="showAddModal" 
+            x-show="showAddModal && isAdmin" 
             x-transition 
             class="fixed inset-0 z-50 flex items-center justify-center bg-black/50 p-4"
             style="display: none;"

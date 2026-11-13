@@ -1,12 +1,24 @@
 import { query, mutation } from "./_generated/server";
 import { v } from "convex/values";
 
-// 1. Generate a temporary upload URL for local PNG/JPG file uploads
-export const generateUploadUrl = mutation(async (ctx) => {
-  return await ctx.storage.generateUploadUrl();
+// Helper: Blocks any write request that doesn't carry the valid admin secret
+function assertAdmin(adminSecret: string) {
+  const expected = process.env.CONVEX_ADMIN_SECRET;
+  if (!expected || adminSecret !== expected) {
+    throw new Error("Unauthorized: Admin access required.");
+  }
+}
+
+// 1. Generate a temporary upload URL for local PNG/JPG file uploads (Admin Only)
+export const generateUploadUrl = mutation({
+  args: { adminSecret: v.string() },
+  handler: async (ctx, args) => {
+    assertAdmin(args.adminSecret);
+    return await ctx.storage.generateUploadUrl();
+  },
 });
 
-// 2. Landing Page Query: Fetches top 6 most sought-after products + resolves Convex storage URLs
+// 2. Landing Page Query: Fetches top 6 most sought-after products + resolves Convex storage URLs (Public)
 export const getFeaturedProducts = query({
   handler: async (ctx) => {
     const products = await ctx.db
@@ -26,7 +38,7 @@ export const getFeaturedProducts = query({
   },
 });
 
-// 3. Store Page Query: Groups products by category + resolves Convex storage URLs
+// 3. Store Page Query: Groups products by category + resolves Convex storage URLs (Public)
 export const getStoreMenu = query({
   handler: async (ctx) => {
     const allProducts = await ctx.db.query("products").collect();
@@ -49,9 +61,10 @@ export const getStoreMenu = query({
   },
 });
 
-// 4. Mutation: Inserts a new product and initializes salesCount for indexing
+// 4. Mutation: Inserts a new product and initializes salesCount for indexing (Admin Only)
 export const addProduct = mutation({
   args: {
+    adminSecret: v.string(),
     name: v.string(),
     price: v.number(),
     category: v.string(),
@@ -61,20 +74,24 @@ export const addProduct = mutation({
     salesCount: v.optional(v.number()),
   },
   handler: async (ctx, args) => {
+    assertAdmin(args.adminSecret);
+
     if (args.price < 0) {
       throw new Error("Product price cannot be less than 0.");
     }
 
+    const { adminSecret, ...productData } = args;
     return await ctx.db.insert("products", {
-      ...args,
-      salesCount: args.salesCount ?? 0,
+      ...productData,
+      salesCount: productData.salesCount ?? 0,
     });
   },
 });
 
-// 5. Mutation: Updates an existing product in-place (prevents duplicates)
+// 5. Mutation: Updates an existing product in-place (prevents duplicates) (Admin Only)
 export const updateProduct = mutation({
   args: {
+    adminSecret: v.string(),
     id: v.id("products"),
     name: v.string(),
     price: v.number(),
@@ -83,6 +100,8 @@ export const updateProduct = mutation({
     description: v.string(),
   },
   handler: async (ctx, args) => {
+    assertAdmin(args.adminSecret);
+
     if (args.price < 0) {
       throw new Error("Product price cannot be less than 0.");
     }
@@ -109,12 +128,15 @@ export const updateProduct = mutation({
   },
 });
 
-// 6. Mutation: Deletes a product and its stored image in real time
+// 6. Mutation: Deletes a product and its stored image in real time (Admin Only)
 export const deleteProduct = mutation({
   args: {
+    adminSecret: v.string(),
     id: v.id("products"),
   },
   handler: async (ctx, args) => {
+    assertAdmin(args.adminSecret);
+
     const existing = await ctx.db.get(args.id);
     if (!existing) return;
 

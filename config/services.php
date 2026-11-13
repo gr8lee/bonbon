@@ -35,4 +35,6 @@ return [
         ],
     ],
 
+    'convex' => ['admin_secret' => env('CONVEX_ADMIN_SECRET')],
+
 ];

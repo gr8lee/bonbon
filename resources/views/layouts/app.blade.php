@@ -27,6 +27,27 @@
             <li><a href="/store" class="hover:text-cyan-600 transition">Store</a></li>
             <li><a href="/about" class="hover:text-cyan-600 transition">About</a></li>
             <li><a href="/contact" class="hover:text-cyan-600 transition">Contact</a></li>
+            @guest
+        <a href="{{ route('login') }}" class="bg-cyan-600 hover:bg-cyan-700 text-white px-4 py-1.5 rounded-full text-xs font-bold uppercase tracking-wider transition">
+            Login
+        </a>
+    @endguest
+
+    @auth
+        @if (auth()->user()->isAdmin())
+            <a href="{{ route('admin.dashboard') }}" class="text-cyan-700 font-bold hover:underline">Orders</a>
+            <a href="{{ route('admin.devices') }}" class="text-cyan-700 font-bold hover:underline">Devices</a>
+        @endif
+
+        <a href="{{ route('account.security') }}" class="hover:text-cyan-600">Security</a>
+
+        <form method="POST" action="{{ route('logout') }}" class="inline">
+            @csrf
+            <button type="submit" class="text-xs font-bold uppercase text-red-600 hover:underline">
+                Logout
+            </button>
+        </form>
+    @endauth
         </ul>
 
         <!-- Mobile Hamburger Button -->
