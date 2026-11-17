@@ -102,3 +102,4 @@ Route::get('/', function () {
 Route::get('/store', function () {
     return view('store');
 });
+Route::view('/cart', 'cart')->name('cart');

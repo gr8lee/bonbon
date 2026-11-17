@@ -25,8 +25,20 @@
         <ul class="hidden md:flex items-center space-x-8 font-bold text-sm text-gray-700">
             <li><a href="/" class="hover:text-cyan-600 transition">Home</a></li>
             <li><a href="/store" class="hover:text-cyan-600 transition">Store</a></li>
-            <li><a href="/about" class="hover:text-cyan-600 transition">About</a></li>
-            <li><a href="/contact" class="hover:text-cyan-600 transition">Contact</a></li>
+         <li> <a 
+    href="{{ route('cart') }}" 
+    x-data="{ count: 0 }"
+    x-init="
+        const sync = () => count = JSON.parse(localStorage.getItem('store_cart') || '[]').reduce((s, i) => s + i.quantity, 0);
+        sync();
+        window.addEventListener('cart-updated', sync);
+        window.addEventListener('storage', sync);
+    "
+    class="hover:text-cyan-600 flex items-center space-x-1"
+>
+    <span>Cart</span>
+    <span x-show="count > 0" x-text="'(' + count + ')'" class="bg-cyan-600 text-white text-[10px] font-black px-2 py-0.5 rounded-full"></span>
+</a></li> 
             @guest
         <a href="{{ route('login') }}" class="bg-cyan-600 hover:bg-cyan-700 text-white px-4 py-1.5 rounded-full text-xs font-bold uppercase tracking-wider transition">
             Login

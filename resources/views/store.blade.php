@@ -159,7 +159,25 @@
                 } finally {
                     this.isUploading = false;
                 }
-            }
+            },
+                addToCart(product) {
+    const cart = JSON.parse(localStorage.getItem('store_cart') || '[]');
+    const existing = cart.find(item => item.productId === product._id);
+    if (existing) {
+        existing.quantity += 1;
+    } else {
+        cart.push({
+            productId: product._id,
+            name: product.name,
+            price: product.price,
+            image: product.image,
+            quantity: 1
+        });
+    }
+    localStorage.setItem('store_cart', JSON.stringify(cart));
+    window.dispatchEvent(new Event('cart-updated'));
+    this.activeModal = null;
+}
         }"
     >
         <!-- Sticky Category Navigation Bar + Admin-Only Add Button -->
@@ -296,7 +314,7 @@
                         
                         <div class="flex justify-between items-center border-t pt-4">
                             <span class="text-2xl font-black text-cyan-600" x-text="'KSh ' + (activeModal.price).toFixed(2)"></span>
-                            <button class="bg-cyan-600 text-white font-bold px-6 py-2 rounded-full hover:bg-cyan-700 transition uppercase text-xs">
+                            <button @click="addToCart(activeModal)" class="bg-cyan-600 text-white font-bold px-6 py-2 rounded-full hover:bg-cyan-700 transition uppercase text-xs">
                                 Add to Cart
                             </button>
                         </div>
